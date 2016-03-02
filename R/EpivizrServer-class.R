@@ -2,7 +2,7 @@
 #' 
 #' @docType class
 #' @importFrom R6 R6Class
-EpivizServer <- R6Class("EpivizServer",
+EpivizrServer <- R6Class("EpivizrServer",
   private = list(
     port = 7312L,
     try_ports = FALSE,
@@ -43,7 +43,7 @@ EpivizServer <- R6Class("EpivizServer",
       private$try_ports <- try_ports
       private$daemonized <-  .epivizrCanDaemonize() && isTRUE(daemonized)
       private$start_server_fn <- if (private$daemonized) httpuv::startDaemonizedServer else httpuv::startServer
-      private$stop_server_fn <- if (.self$daemonized) httpuv::stopDaemonizedServer else httpuv::stopServer
+      private$stop_server_fn <- if (private$daemonized) httpuv::stopDaemonizedServer else httpuv::stopServer
       private$verbose <- verbose
       
       private$request_queue <- Queue$new()
@@ -62,6 +62,9 @@ EpivizServer <- R6Class("EpivizServer",
       cat(sprintf("<EpivizServer> port: %d, %s", private$port, ifelse(private$socket_connected,"connected","not connected")),"\n")
       invisible()
     },
+    is_closed = function() { is.null(private$server) },
+    is_daemonized = function() { isTRUE(private$daemonized) },
+    stop_server = function() { invisible() },
     makeCallbacks=function() {
       wsHandler <- function(ws) {
         if (verbose) epivizrMsg("WS opened")
@@ -140,9 +143,6 @@ EpivizServer <- R6Class("EpivizServer",
       startServer(...)
       on.exit(stopServer())
       service()
-    },
-    isClosed=function() {
-      is.null(server)
     },
     bindManager=function(mgr) {
       msgCallback <<- function(binary, msg) {
