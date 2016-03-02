@@ -1,8 +1,8 @@
 context("server")
 
-constrFunction <- function(...) epivizr:::EpivizServer$new(daemonized=getOption("epivizrTestDaemonized"),
-                                                           standalone=getOption("epivizrTestStandalone"),
-                                                           verbose=TRUE, ...)
+constrFunction <- function(...) createServer(daemonized=getOption("epivizrTestDaemonized"),
+                                             verbose=TRUE, ...)
+
 
 mgr <- new.env()
 mgr$lastMessage <- ""
@@ -25,37 +25,52 @@ mgr$getMeasurements <- function(msg) return(NULL)
 mgr$getRows <- function(msg) return(NULL)
 mgr$getValues <- function(msg) return(NULL)
 
-test_that("constructor creates a proper object", {
-  server <- constrFunction(port=7123L)
+
+test_that("non-daemonized constructor creates a proper object", {
+  server <- createServer(port=7123L, daemonized=FALSE, verbose=TRUE)
   expect_is(server, "EpivizServer")
   expect_true(server$isClosed())
-  expect_equal(server$daemonized, getOption("epivizrTestDaemonized"))
-  expect_equal(server$standalone, getOption("epivizrTestStandalone"))
+  expect_equal(server$daemonized, FALSE)
 })
 
-test_that("startServer and stopServer work appropriately", {
-  server <- constrFunction(port=7123L)
+test_that("daemonized constructor creates a proper object", {
+  server <- createServer(port=7123L, daemonized=TRUE, verbose=TRUE)
+  expect_is(server, "EpivizServer")
+  expect_true(server$isClosed())
+  expect_equal(server$daemonized, TRUE)
+})
+
+test_that("non-daemonized startServer and stopServer work appropriately", {
+  server <- startServer(port=7123L, daemonized=FALSE, verbose=TRUE)
   expect_true(server$isClosed())
   
   server$startServer()
   expect_false(server$isClosed())
-  expect_equal(server$daemonized, getOption("epivizrTestDaemonized"))
-  expect_equal(server$standalone, getOption("epivizrTestStandalone"))
+  expect_equal(server$daemonized, FALSE)
+  server$stopServer()
+  expect_true(server$isClosed())
+})
+
+test_that("daemonized startServer and stopServer work appropriately", {
+  server <- daemonized(port=7123L, daemonized=TRUE, verbose=TRUE)
+  expect_true(server$isClosed())
+  
+  server$startServer()
+  expect_false(server$isClosed())
+  expect_equal(server$daemonized, TRUE)
   server$stopServer()
   expect_true(server$isClosed())
 })
 
 test_that("socket messaging works", {
+  skip("Messaging not available yet")
   server <- constrFunction(port=7123L)
   server$bindManager(mgr)
   server$startServer()
 
-  if (!server$standalone) {
-    browseURL("http://localhost:7123/")
-  } else {
-    browseURL("http://localhost:7123/index-standalone.html")
-  }
-  
+  # change to RSelenium here
+  browseURL("http://localhost:7123/")
+
   tryCatch(server$service(), interrupt=function(int) invisible())
   wait_until(server$socketConnected)
   
@@ -71,6 +86,7 @@ test_that("socket messaging works", {
   
 
 test_that("new error message is displayed", {
+  skip("skip this test for now")
   server <- constrFunction(port=7123L)
   server$bindManager(mgr)
   server$startServer()
@@ -85,6 +101,7 @@ test_that("new error message is displayed", {
 })
 
 test_that("tryPorts works", {
+  skip("skip this test for now")
   server <- constrFunction(port=7123L)
   server$bindManager(mgr)
   server$startServer()
