@@ -1,3 +1,0 @@
-createServer <- function(...) {
-  EpivizServer$new(...)
-}

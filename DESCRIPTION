@@ -6,6 +6,17 @@ Authors@R: person("Hector", "Corrada Bravo", email = "hcorrada@gmail.com", role 
 URL: https://epiviz.github.io
 BugReports: https://github.com/epiviz/epivizrServer
 Description: WebSocket connections for epivizr apps and packages
-Depends: R (>= 3.2.3)
+Depends:
+    R (>= 3.2.3)
+Imports:
+    httpuv (>= 1.3.0),
+    R6 (>= 2.0.0),
+    rjson
+Suggests:
+    testthat
 License: MIT + file LICENSE
 LazyData: true
+Collate:
+    'IndexedArray-class.R'
+    'Queue-class.R'
+RoxygenNote: 5.0.1
