@@ -2,7 +2,7 @@
 #' 
 #' @docType class
 #' @importFrom R6 R6Class
-EpivizrServer <- R6Class("EpivizrServer",
+EpivizServer <- R6Class("EpivizServer",
   private = list(
     port = 7312L,
     try_ports = FALSE,
@@ -31,7 +31,28 @@ EpivizrServer <- R6Class("EpivizrServer",
         })
       }
       invisible()
-  }
+    },
+    create_callbacks = function() {
+      wsHandler <- function(ws) {
+        if (verbose) epivizrMsg("WS opened")
+        private$websocket <- ws
+        private$socketConnected <- TRUE
+        private$websocket$onMessage(private$message_handler)
+        private$websocket$onClose(function() {
+          private$socketConnected <- FALSE
+          invisible()
+        })
+        self$pop_request()
+        invisible()
+      }
+    
+      httpHandler <- .dummyTestPage
+    
+      handlerMgr <- HandlerManager$new()
+      handlerMgr$addHandler(httpHandler, 'static')
+      handlerMgr$addWSHandler(wsHandler, 'ws')
+      handlerMgr$createHttpuvApp()
+    }
   ),
   public = list(
     initialize = function(
@@ -64,54 +85,30 @@ EpivizrServer <- R6Class("EpivizrServer",
     },
     is_closed = function() { is.null(private$server) },
     is_daemonized = function() { isTRUE(private$daemonized) },
-    stop_server = function() { invisible() },
-    makeCallbacks=function() {
-      wsHandler <- function(ws) {
-        if (verbose) epivizrMsg("WS opened")
-        websocket <<- ws
-        socketConnected <<- TRUE
-        websocket$onMessage(.self$msgCallback)
-        websocket$onClose(function() {
-          socketConnected <<- FALSE
-          invisible()
-        })
-        popRequest()
-        invisible()
+    stop_server = function() { 
+      private$interrupted <- TRUE
+      
+      if (!self$is_closed()) {
+        private$stop_server_fn(private$server)
       }
-
-      if (standalone) {
-        httpHandler <- .standalonePage(staticSitePath)
-      } else {
-        httpHandler <- .dummyTestPage
-      }
-
-      handlerMgr <- HandlerManager$new()
-      handlerMgr$addHandler(httpHandler, 'static')
-      handlerMgr$addWSHandler(wsHandler, 'ws')
-      handlerMgr$createHttpuvApp()
+      private$server <- NULL
+      private$socket_connected <- FALSE
+      private$interrupted <- TRUE
+      invisible()
     },
-    startServer=function(...) {
-      'start the websocket server'
-      callbacks <- makeCallbacks()
+    start_server = function() {
+      callbacks <- private$create_callbacks()
+      
       tryCatch({
-        server <<- startServerFn("0.0.0.0", port, callbacks)
-      }, error=function(e) {
-        if (!tryPorts)
-          stop(sprintf("Error starting epivizServer, likely because port %d is in use.\nTry a different port number or setting tryPorts=TRUE (see ?startEpiviz).",port))
-        tryMorePorts(callbacks)
+        private$server <- private$start_server_fn("0.0.0.0", private$port, callbacks)
+      }, error = function(e) {
+        if (!private$try_ports)
+          stop(sprintf("Error starting epivizServer, likely because port %d is in use.\nTry a different port number or setting try_ports=TRUE (see ?startEpiviz).", private$port))
+        private$try_more_ports(callbacks)
       })
       invisible()
     },
     stopServer=function() {
-      interrupted <<- TRUE
-
-      if (!isClosed()) {
-        stopServerFn(server)
-      }
-      server <<- NULL
-      socketConnected <<- FALSE
-      interrupted <<- TRUE
-      invisible()
     },
     service=function(nonInteractive=FALSE) {
       if (isClosed()) {

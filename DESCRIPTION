@@ -21,5 +21,6 @@ Collate:
     'Queue-class.R'
     'utils.R'
     'zzz.R'
-    'EpivizrServer.R'
+    'middleware-plus-supporting.R'
+    'EpivizServer.R'
 RoxygenNote: 5.0.1
