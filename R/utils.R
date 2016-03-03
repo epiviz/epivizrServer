@@ -10,4 +10,7 @@
 #   if (is.null(null)) { args[["null"]] = "null" }
 #   as.character(do.call(jsonlite::toJSON, c(list(x=x), args)))
 # }
-toJSON <- rjson::toJSON
+
+json_parser <- rjson::fromJSON
+json_writer <- rjson::toJSON
+

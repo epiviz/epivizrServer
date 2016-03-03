@@ -22,5 +22,6 @@ Collate:
     'utils.R'
     'zzz.R'
     'middleware-plus-supporting.R'
-    'EpivizServer.R'
+    'dummyTestPage.R'
+    'EpivizServer-class.R'
 RoxygenNote: 5.0.1

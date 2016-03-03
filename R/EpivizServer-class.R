@@ -7,9 +7,9 @@ EpivizServer <- R6Class("EpivizServer",
     port = 7312L,
     try_ports = FALSE,
     websocket = NULL,
+    websocket_closed = FALSE,
     server = NULL,
     interrupted = FALSE,
-    socket_connected = FALSE,
     verbose = FALSE,
     request_queue = NULL,
     request_waiting = FALSE,
@@ -18,13 +18,13 @@ EpivizServer <- R6Class("EpivizServer",
     daemonized = FALSE,
     start_server_fn = NULL,
     stop_server_fn = NULL,
-    try_more_ports = function(callbacks, minPort=7000L, maxPort=7999L) {
+    try_more_ports = function(app, minPort=7000L, maxPort=7999L) {
       success <- FALSE
       private$port <- minPort
       while(!success && private$port <= maxPort) {
         tryCatch({
           cat(".")
-          private$server <- private$start_server_fn("0.0.0.0", private$port, callbacks)
+          private$server <- private$start_server_fn("0.0.0.0", private$port, app)
           success <- TRUE
         }, error=function(e) {
           private$port <- private$port + 1L
@@ -32,17 +32,30 @@ EpivizServer <- R6Class("EpivizServer",
       }
       invisible()
     },
-    create_callbacks = function() {
+    message_handler = function(binary, msg) {
+      if (binary) {
+        msg <- rawToChar(msg)
+      }
+      
+      if (private$verbose) {
+        cat("RCVD: \n", msg)
+      }
+      msg <- json_parser(msg)
+      invisible()
+    },
+    create_app = function() {
       wsHandler <- function(ws) {
-        if (verbose) epivizrMsg("WS opened")
+        if (private$verbose) cat("WS opened\n")
         private$websocket <- ws
-        private$socketConnected <- TRUE
+        private$websocket_closed <- FALSE
+        
         private$websocket$onMessage(private$message_handler)
         private$websocket$onClose(function() {
-          private$socketConnected <- FALSE
+          if (private$verbose) cat("WS closed\n")
+          private$websocket_closed <- TRUE
           invisible()
         })
-        self$pop_request()
+        #self$pop_request()
         invisible()
       }
     
@@ -80,35 +93,54 @@ EpivizServer <- R6Class("EpivizServer",
                     }, onexit=TRUE)
     },
     show=function() {
-      cat(sprintf("<EpivizServer> port: %d, %s", private$port, ifelse(private$socket_connected,"connected","not connected")),"\n")
+      cat(sprintf("<EpivizServer> port: %d, %s", private$port, ifelse(self$is_socket_connected(),"connected","not connected")),"\n")
       invisible()
     },
     is_closed = function() { is.null(private$server) },
     is_daemonized = function() { isTRUE(private$daemonized) },
+    is_socket_connected = function() { !is.null(private$websocket) && !private$websocket_closed},
     stop_server = function() { 
       private$interrupted <- TRUE
+      if (private$websocket_closed) {
+        private$websocket <- NULL
+      }
       
       if (!self$is_closed()) {
         private$stop_server_fn(private$server)
       }
       private$server <- NULL
-      private$socket_connected <- FALSE
-      private$interrupted <- TRUE
+      private$interrupted <- FALSE
       invisible()
     },
     start_server = function() {
-      callbacks <- private$create_callbacks()
+      app <- private$create_app()
       
       tryCatch({
-        private$server <- private$start_server_fn("0.0.0.0", private$port, callbacks)
+        private$server <- private$start_server_fn("0.0.0.0", private$port, app)
       }, error = function(e) {
         if (!private$try_ports)
           stop(sprintf("Error starting epivizServer, likely because port %d is in use.\nTry a different port number or setting try_ports=TRUE (see ?startEpiviz).", private$port))
-        private$try_more_ports(callbacks)
+        private$try_more_ports(app)
       })
       invisible()
     },
-    stopServer=function() {
+    register_action = function(action, callback) {
+      if (!is.character(action)) {
+        stop("action must be a character string")
+      }
+      if (!is.null(private$action_handlers[[action]])) {
+        stop(sprintf("action %s is already registered", action))
+      }
+      private$action_handlers[[action]] <- callback
+      invisible()
+    },
+    has_action = function(action) { !is.null(private$action_handlers[[action]]) },
+    handle = function(action, msg_data) { 
+      if (!self$has_action(action)) {
+        stop("action %s is not registered", action)
+      }
+      callback <- private$action_handlers[[action]]
+      callback(msg_data)
     },
     service=function(nonInteractive=FALSE) {
       if (isClosed()) {
@@ -143,14 +175,7 @@ EpivizServer <- R6Class("EpivizServer",
     },
     bindManager=function(mgr) {
       msgCallback <<- function(binary, msg) {
-        if (binary) {
-          msg <- rawToChar(msg)
-        }
-
-        if (verbose) {
-          epivizrMsg("RCVD: ", msg)
-        }
-        msg = fromJSON(msg)
+        
         if (msg$type == "request") {
           out=list(type="response",
             requestId=msg$requestId)
@@ -165,7 +190,7 @@ EpivizServer <- R6Class("EpivizServer",
           } else {
               out$data <- mgr$handle(action, msgData)
           }
-          response=toJSON(out)
+          response <- json_writer(out)
           if (verbose) {
             epivizrMsg("SEND: ", response)
           }
