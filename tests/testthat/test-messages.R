@@ -13,6 +13,7 @@ test_that("registering action works", {
 })
 
 .canPhantomTest <- function() {
+  if(.Platform$OS.type == "windows") { return(FALSE) }
   if(!require(RSelenium)) { return(FALSE) }
   if(Sys.which("phantomjs") == "") { return(FALSE) }
   if(!getOption("epivizrCanDaemonize")) { return(FALSE) }
