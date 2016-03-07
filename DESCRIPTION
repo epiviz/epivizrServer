@@ -24,4 +24,5 @@ Collate:
     'middleware-plus-supporting.R'
     'dummyTestPage.R'
     'EpivizServer-class.R'
+    'createServer.R'
 RoxygenNote: 5.0.1
