@@ -52,7 +52,6 @@ EpivizServer <- R6Class("EpivizServer",
       request_id <- msg$requestId
       msg_data <- msg$data
       action <- msg_data$action
-      out$data <- NULL
 
       response <- list(type = "response",
                     requestId = request_id,
@@ -68,8 +67,8 @@ EpivizServer <- R6Class("EpivizServer",
       }
       
       response <- json_writer(response)
-      if (verbose) {
-        epivizrMsg("SEND: ", response)
+      if (private$verbose) {
+        cat("SEND: ", response, "\n")
       }
       
       # TODO: check websocket is not null here
@@ -89,7 +88,7 @@ EpivizServer <- R6Class("EpivizServer",
       }
       
       if (private$verbose) {
-        cat("RCVD: \n", msg)
+        cat("RCVD: ", msg, "\n")
       }
       msg <- json_parser(msg)
       switch(msg$type,
@@ -152,6 +151,7 @@ EpivizServer <- R6Class("EpivizServer",
     is_closed = function() { is.null(private$server) },
     is_daemonized = function() { isTRUE(private$daemonized) },
     is_socket_connected = function() { !is.null(private$websocket) && !private$websocket_closed},
+    has_request_waiting = function() { private$request_waiting },
     stop_server = function() { 
       private$interrupted <- TRUE
       if (private$websocket_closed) {
