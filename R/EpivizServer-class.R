@@ -32,6 +32,57 @@ EpivizServer <- R6Class("EpivizServer",
       }
       invisible()
     },
+    pop_request = function() {
+      if (!self$socket_connected()) {
+        return(invisible())
+      }
+      request <- private$request_queue$pop()
+      if (is.null(request)) {
+        private$request_waiting <- FALSE
+        public$stop_service()
+        return(invisible())
+      }
+      request <- json_writer(request)
+      if (verbose) epivizrMsg("SEND: ", request)
+      private$websocket$send(request)
+      private$request_waiting <- TRUE
+      self$service()
+    },
+    handle_request = function(msg) {
+      request_id <- msg$requestId
+      msg_data <- msg$data
+      action <- msg_data$action
+      out$data <- NULL
+
+      response <- list(type = "response",
+                    requestId = request_id,
+                    success = FALSE,
+                    data = NULL)      
+      
+      if (self$has_action(action)) {
+        tryCatch({
+          callback <- private$action_handlers[[action]]
+          response$data <- callback(msg_data)
+          response$success <- TRUE
+        })
+      }
+      
+      response <- json_writer(response)
+      if (verbose) {
+        epivizrMsg("SEND: ", response)
+      }
+      
+      # TODO: check websocket is not null here
+      private$websocket$send(response)
+    },
+    handle_response = function(msg) {
+      # TODO: check response success
+      callback <- private$callbackArray$get(msg$requestId)
+      if (!is.null(callback)) {
+        callback(msg$data)
+      }
+      self$pop_request()
+    },
     message_handler = function(binary, msg) {
       if (binary) {
         msg <- rawToChar(msg)
@@ -41,7 +92,9 @@ EpivizServer <- R6Class("EpivizServer",
         cat("RCVD: \n", msg)
       }
       msg <- json_parser(msg)
-      invisible()
+      switch(msg$type,
+             request = private$handle_request(msg),
+             response = private$handle_response(msg))
     },
     create_app = function() {
       wsHandler <- function(ws) {
@@ -135,19 +188,18 @@ EpivizServer <- R6Class("EpivizServer",
       invisible()
     },
     has_action = function(action) { !is.null(private$action_handlers[[action]]) },
-    handle = function(action, msg_data) { 
-      if (!self$has_action(action)) {
-        stop("action %s is not registered", action)
-      }
-      callback <- private$action_handlers[[action]]
-      callback(msg_data)
+    send_request = function(request) {
+      private$request_queue$push(request)
+      if (!private$request_waiting)
+        private$pop_request()
+      invisible()
     },
     service=function(nonInteractive=FALSE) {
-      if (isClosed()) {
+      if (self$is_closed()) {
         stop("Can't listen, socket is closed")
       }
 
-      if (daemonized)
+      if (self$is_daemonized())
         return(invisible(TRUE))
 
       if (nonInteractive) {
@@ -156,81 +208,21 @@ EpivizServer <- R6Class("EpivizServer",
         return(invisible(TRUE))
       }
 
-
-      interrupted <<- FALSE
-      while(!interrupted) {
+      private$interrupted <- FALSE
+      while(!private$interrupted) {
         httpuv::service()
         Sys.sleep(0.001)
       }
-      invisible(TRUE)
-    },
-    stopService=function() {
-      interrupted <<- TRUE
       invisible()
     },
-    runServer=function(...) {
-      startServer(...)
-      on.exit(stopServer())
-      service()
-    },
-    bindManager=function(mgr) {
-      msgCallback <<- function(binary, msg) {
-        
-        if (msg$type == "request") {
-          out=list(type="response",
-            requestId=msg$requestId)
-          msgData=msg$data
-          action=msgData$action
-          # request handling
-# defined here: http://epiviz.github.io/dataprovider-plugins.html
-
-          out$data=NULL
-          if (action == "getAllData") {
-              out$data <- list(msg=msgData$chr)
-          } else {
-              out$data <- mgr$handle(action, msgData)
-          }
-          response <- json_writer(out)
-          if (verbose) {
-            epivizrMsg("SEND: ", response)
-          }
-          websocket$send(response)
-        } else if (msg$type == "response") {
-          # TODO: check response success
-          callback = mgr$callbackArray$get(msg$requestId)
-          if (!is.null(callback)) {
-            callback(msg$data)
-          }
-          popRequest()
-        }
-      }
+    stop_service=function() {
+      private$interrupted <- TRUE
       invisible()
     },
-    sendRequest=function(request) {
-      requestQueue$push(request)
-      if (!requestWaiting)
-        popRequest()
-      invisible()
-    },
-    popRequest=function() {
-      if (!socketConnected) {
-        return(invisible())
-      }
-      request <- requestQueue$pop()
-      if (is.null(request)) {
-        requestWaiting <<- FALSE
-        stopService()
-        return(invisible())
-      }
-      request <- toJSON(request)
-      if (verbose) epivizrMsg("SEND: ", request)
-      websocket$send(request)
-      requestWaiting <<- TRUE
-      service()
-    },
-    emptyRequestQueue=function() {
-      requestQueue$empty()
-      inivisible()
+    run_server=function(...) {
+      self$start_server(...)
+      on.exit(self$stop_server())
+      self$service()
     }
   )
 )
