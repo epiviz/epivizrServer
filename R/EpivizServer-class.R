@@ -33,17 +33,28 @@ EpivizServer <- R6Class("EpivizServer",
       invisible()
     },
     pop_request = function() {
-      if (!self$socket_connected()) {
+      if (!self$is_socket_connected()) {
         return(invisible())
       }
-      request <- private$request_queue$pop()
-      if (is.null(request)) {
+      if (!private$request_queue$has_more()) {
         private$request_waiting <- FALSE
-        public$stop_service()
+        self$stop_service()
         return(invisible())
       }
+      
+      queue_entry <- private$request_queue$pop()
+      request_data <- queue_entry$data
+      callback <- queue_entry$callback
+      
+      request_id <- private$callback_array$append(callback)
+      request <- list(type = "request",
+                      requestId = request_id,
+                      data = request_data)
       request <- json_writer(request)
-      if (verbose) epivizrMsg("SEND: ", request)
+      
+      if (private$verbose) cat("SEND: ", request, "\n")
+      
+      # TODO: check websocket connection here
       private$websocket$send(request)
       private$request_waiting <- TRUE
       self$service()
@@ -75,12 +86,15 @@ EpivizServer <- R6Class("EpivizServer",
       private$websocket$send(response)
     },
     handle_response = function(msg) {
-      # TODO: check response success
-      callback <- private$callbackArray$get(msg$requestId)
+      if (!isTRUE(msg$success)) {
+        stop("request to JS app was unsuccessful")
+      }
+      
+      callback <- private$callback_array$get(msg$requestId)
       if (!is.null(callback)) {
         callback(msg$data)
       }
-      self$pop_request()
+      private$pop_request()
     },
     message_handler = function(binary, msg) {
       if (binary) {
@@ -188,8 +202,8 @@ EpivizServer <- R6Class("EpivizServer",
       invisible()
     },
     has_action = function(action) { !is.null(private$action_handlers[[action]]) },
-    send_request = function(request) {
-      private$request_queue$push(request)
+    send_request = function(request_data, callback) {
+      private$request_queue$push(list(data=request_data, callback=callback))
       if (!private$request_waiting)
         private$pop_request()
       invisible()

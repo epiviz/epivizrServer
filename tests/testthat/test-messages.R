@@ -93,7 +93,7 @@ test_that("handle request works", {
   
   Sys.sleep(2)
   # check it made it to response list
-  outputEl <- remDr$findElement(using="id", "output")  
+  outputEl <- remDr$findElement(using="id", "response_output")  
   responseEl <- outputEl$findChildElement(using="css", "pre")
   response_text <- responseEl$getElementText()[[1]]
   expect_equal(response_text, "This is the response from R")
@@ -105,7 +105,6 @@ test_that("handle request works", {
 })
 
 test_that("send request works", {
-  skip("skip this test for now")
   if (!.canPhantomTest()) {
     skip("This test can't be run in this environment")
   }
@@ -127,27 +126,26 @@ test_that("send request works", {
   lastMessage <- ""
   server$register_action("update", function(msg_data) {
     lastMessage <<- msg_data$message
+    list(message="This is the response from R")
   })
-  server$start_server()
-  
+
   expect_false(server$is_closed())
+
+  lastMessage <<- ""
+  request_text_from_R <- "This is a message from R"
+  server$send_request(list(message=request_text_from_R), 
+                      function(response_data) {
+                        cat("This is the callback function\n")
+                        print(response_data)
+                        lastMessage <<- response_data$message
+                      })
+  Sys.sleep(2)
+  outputEl <- remDr$findElement(using="id", "request_output")
+  requestEl <- outputEl$findChildElement(using="css", "pre")
+  request_text_in_JS <- requestEl$getElementText()[[1]]
+  expect_equal(request_text_in_JS, request_text_from_R)
   
-  # use selenium to write a message on page
-  # check lastMessage is updated
-  inputEl <- remDr$findElement(using="id", "input")
-  message_text <- "This is a message from JS"
-  inputEl$sendKeysToElement(list(message_text, key="enter"))
-  wait_until(!server$requestWaiting)
-  
-  # check it made it to response list
-  outputEl <- remDr$findElement(using="id", "output")  
-  responseEl <- outputEl$findChildElement(using="css", "pre")
-  response_text <- responseEl$getElementText()[[1]]
-  expect_equal(response_text, message_text)
-  
-  # check message made it here
-  expect_equal(lastMessage, message_text)
-  
+  expect_equal(lastMessage, "this is the response from JS")
   remDr$close()
 })
 
