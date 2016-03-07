@@ -1,8 +1,6 @@
 context("messages")
 
 .canPhantomTest <- function() {
-  if(.Platform$OS.type == "windows") { return(FALSE) }
-  if(!require(RSelenium)) { return(FALSE) }
   if(Sys.which("phantomjs") == "") { return(FALSE) }
   if(!getOption("epivizrCanDaemonize")) { return(FALSE) }
   TRUE
@@ -12,9 +10,14 @@ remDr <- NULL
 pJS <- NULL
 
 .startRemoteDriver <- function() {
+  if(!require(RSelenium)) {
+    stop("can't run this test here")
+  }
+  
   if(!.canPhantomTest()) {
     stop("can't do headless testing here")
   }
+  
   pJS <<- phantom()
   Sys.sleep(2)
   
@@ -33,6 +36,10 @@ pJS <- NULL
 }
 
 test_that("socket connection works", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if_not_installed("RSelenium")
+  
   if (!.canPhantomTest()) {
     skip("This test can't be run in this environment")
   }
@@ -58,6 +65,10 @@ test_that("socket connection works", {
 })
 
 test_that("handle request works", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if_not_installed("RSelenium")
+  
   if (!.canPhantomTest()) {
     skip("This test can't be run in this environment")
   }
@@ -105,6 +116,10 @@ test_that("handle request works", {
 })
 
 test_that("send request works", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if_not_installed("RSelenium")
+  
   if (!.canPhantomTest()) {
     skip("This test can't be run in this environment")
   }
