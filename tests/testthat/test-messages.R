@@ -164,39 +164,3 @@ test_that("send request works", {
   remDr$close()
 })
 
-test_that("tryPorts works", {
-  skip("skip this test for now")
-  server <- constrFunction(port=7123L)
-  server$bindManager(mgr)
-  server$startServer()
-
-#  browseURL(sprintf("http://localhost:7312/")
- ## tryCatch(server$service(), interrupt=function(int) invisible())
-  #wait_until(substitute(server$socketConnected))
-  
-  expect_false(server$isClosed())
-
-  server2 <- constrFunction(port=7123L, tryPorts=TRUE)
-  server2$bindManager(mgr)
-  server2$startServer()
-  #tryCatch(server2$service(), interrupt=function(int) invisible())
- # wait_until(substitute(server$socketConnected))
-  
-  expect_false(server2$isClosed())
-
-  if (!server2$standalone) {
-    browseURL(sprintf("http://localhost:%d/", server2$port))
-  } else {
-    browseURL(sprintf("http://localhost:%d/index-standalone.html", server2$port))
-  }
-  tryCatch(server2$service(), interrupt=function(int) invisible())
-  wait_until(server2$socketConnected)
-  
-  server$stopServer()
-
-  server2$sendRequest(mgr$makeRequest("this other msg"))
-  server2$stopServer()
-  expect_true(server$isClosed())
-  expect_true(server2$isClosed())
-})
-

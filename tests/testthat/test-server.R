@@ -8,6 +8,8 @@ test_that("non-daemonized constructor creates a proper object", {
 })
 
 test_that("daemonized constructor creates a proper object", {
+  skip_on_os("windows")
+  
   server <- EpivizServer$new(port=7123L, daemonized=TRUE, verbose=TRUE)
   expect_is(server, "EpivizServer")
   expect_true(server$is_closed())
@@ -25,6 +27,8 @@ test_that("non-daemonized start_server and stop_server work appropriately", {
 })
 
 test_that("daemonized startServer and stopServer work appropriately", {
+  skip_on_os("windows")
+  
   server <- EpivizServer$new(port=7123L, daemonized=TRUE, verbose=TRUE)
   expect_true(server$is_closed())
   
