@@ -2,6 +2,40 @@
 #' 
 #' @docType class
 #' @importFrom R6 R6Class
+#' @export
+#' @return Object of \code{\link{R6Class}} with methods for communication with epiviz JS app
+#' @format \code{\link{R6Class}} object.
+#' @section Methods:
+#' \describe{
+#'  \item{\code{show()}}{Print server information to stdout}
+#'  \item{\code{is_closed()}}{Check if server is closed}
+#'  \item{\code{is_daemonized()}}{Check if server is running in background}
+#'  \item{\code{is_socket_connected()}}{Check if there is an open websocket connection to JS app}
+#'  \item{\code{has_request_waiting()}}{Check if there is a sent request waiting for a response from JS app}
+#'  \item{\code{stop_server()}}{Stop the underlying httpuv server}
+#'  \item{\code{start_server()}}{Start the underlying httpuv server, daemonized if applicable}
+#'  \item{\code{register_action(action, callback)}}{Register a callback function to evaluatewhen epiviz JS sends a request for given action. (See Details)}
+#'  \item{\code{has_action(action)}}{Check if a callback function is registered for given action (See Details)}
+#'  \item{\code{send_request(request_data, callback)}}{Send request to epiviz JS app with given data, and evaluate callback when response arrives. (See Details)}
+#'  \item{\code{service()}}{Listen to requests from server. Only has effect when non-daemonized}
+#'  \item{\code{stop_service()}}{Stop listenning to requests from server. Only has effect when non-daemonized}
+#'  \item{\code{run_server()}}{Run server in blocking mode}
+#' }
+#' 
+#' @details
+#' The most important aspect of the API of this server are methods \code{register_action(action, callback)} and \code{send_request}. These are
+#' used to interact with the epiviz JS app through the provided websocket connection. \code{register_action(action, callback)} registers
+#' a callback function to be executed upon request from the epiviz JS app. When the server receives a JSON message through the websocket, it
+#' checks for an \code{action} field in the received request message, and then evaluates the expression \code{callback(message_data)} where \code{message_data}
+#' is obtained from the \code{data} field in the received message. A response will be sent to the epiviz app with field \code{data} populated
+#' with the result of the callback. If an error occurs during evaluation of the callback function, the response will be sent with field
+#' \code{success} set to \code{false}.
+#' 
+#' To send requests to the JS app, method \code{send_request(request_data, callback)} should be used. This is sends a request to the JS app
+#' with the \code{data} field populated with argument \code{request_data}. Once a response is received (with field \code{success} equal to \code{true})
+#' the expression \code{callback(response_data)} is evaluated where \code{response_data} is obtained from the \code{data} field in the received
+#' response message.
+#'
 EpivizServer <- R6Class("EpivizServer",
   private = list(
     port = 7312L,
