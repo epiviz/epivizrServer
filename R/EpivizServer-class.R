@@ -1,26 +1,8 @@
 #' Class providing WebSocket connection server
 #' 
 #' @docType class
-#' @importFrom R6 R6Class
 #' @export
-#' @return Object of \code{\link{R6Class}} with methods for communication with epiviz JS app
-#' @format \code{\link{R6Class}} object.
-#' @section Methods:
-#' \describe{
-#'  \item{\code{show()}}{Print server information to stdout}
-#'  \item{\code{is_closed()}}{Check if server is closed}
-#'  \item{\code{is_daemonized()}}{Check if server is running in background}
-#'  \item{\code{is_socket_connected()}}{Check if there is an open websocket connection to JS app}
-#'  \item{\code{has_request_waiting()}}{Check if there is a sent request waiting for a response from JS app}
-#'  \item{\code{stop_server()}}{Stop the underlying httpuv server}
-#'  \item{\code{start_server()}}{Start the underlying httpuv server, daemonized if applicable}
-#'  \item{\code{register_action(action, callback)}}{Register a callback function to evaluatewhen epiviz JS sends a request for given action. (See Details)}
-#'  \item{\code{has_action(action)}}{Check if a callback function is registered for given action (See Details)}
-#'  \item{\code{send_request(request_data, callback)}}{Send request to epiviz JS app with given data, and evaluate callback when response arrives. (See Details)}
-#'  \item{\code{service()}}{Listen to requests from server. Only has effect when non-daemonized}
-#'  \item{\code{stop_service()}}{Stop listenning to requests from server. Only has effect when non-daemonized}
-#'  \item{\code{run_server()}}{Run server in blocking mode}
-#' }
+#' @return RC object with methods for communication with epiviz JS app
 #' 
 #' @details
 #' The most important aspect of the API of this server are methods \code{register_action(action, callback)} and \code{send_request}. These are
@@ -36,64 +18,93 @@
 #' the expression \code{callback(response_data)} is evaluated where \code{response_data} is obtained from the \code{data} field in the received
 #' response message.
 #'
-EpivizServer <- R6Class("EpivizServer",
-  private = list(
-    port = 7312L,
-    try_ports = FALSE,
-    websocket = NULL,
-    websocket_closed = FALSE,
-    server = NULL,
-    interrupted = FALSE,
-    verbose = FALSE,
-    request_queue = NULL,
-    request_waiting = FALSE,
-    action_handlers = NULL,
-    callback_array = NULL,
-    daemonized = FALSE,
-    start_server_fn = NULL,
-    stop_server_fn = NULL,
-    try_more_ports = function(app, minPort=7000L, maxPort=7999L) {
+EpivizServer <- setRefClass("EpivizServer",
+  fields = list(
+    .port = "integer", 
+    .try_ports = "logical", 
+    .websocket = "ANY", 
+    .websocket_closed = "logical", 
+    .server = "ANY", 
+    .interrupted = "logical", 
+    .verbose = "logical", 
+    .request_queue = "Queue", 
+    .request_waiting = "logical", 
+    .action_handlers = "list", 
+    .callback_array = "IndexedArray", 
+    .daemonized = "logical", 
+    .start_server_fn = "function", 
+    .stop_server_fn = "function" 
+  ),
+  methods = list(
+    initialize = function(
+      port=7312L, 
+      try_ports=FALSE, 
+      daemonized=NULL, 
+      verbose=FALSE) 
+    {
+      .self$.port <- port
+      .self$.try_ports <- try_ports
+      .self$.daemonized <-  .epivizrCanDaemonize() && isTRUE(daemonized)
+      .self$.start_server_fn <- if (.self$.daemonized) httpuv::startDaemonizedServer else httpuv::startServer
+      .self$.stop_server_fn <- if (.self$.daemonized) httpuv::stopDaemonizedServer else httpuv::stopServer
+      .self$.verbose <- verbose
+
+      .self$.websocket <- NULL
+      .self$.websocket_closed <- TRUE
+      
+      .self$.server <- NULL
+      .self$.interrupted <- FALSE
+      
+      .self$.request_queue <- Queue$new()
+      .self$.request_waiting <- FALSE
+      
+      .self$.action_handlers <- vector("list")
+      
+      .self$.callback_array <- IndexedArray$new()
+    },
+    finalize = function() { .self$stop_server() },
+    .try_more_ports = function(app, minPort=7000L, maxPort=7999L) {
       success <- FALSE
-      private$port <- minPort
-      while(!success && private$port <= maxPort) {
+      .self$.port <- minPort
+      while(!success && .self$.port <= maxPort) {
         tryCatch({
           cat(".")
-          private$server <- private$start_server_fn("0.0.0.0", private$port, app)
+          .self$.server <- .self$.start_server_fn("0.0.0.0", .self$.port, app)
           success <- TRUE
         }, error=function(e) {
-          private$port <- private$port + 1L
+          .self$.port <- .self$.port + 1L
         })
       }
       invisible()
     },
-    pop_request = function() {
-      if (!self$is_socket_connected()) {
+    .pop_request = function() {
+      if (!.self$is_socket_connected()) {
         return(invisible())
       }
-      if (!private$request_queue$has_more()) {
-        private$request_waiting <- FALSE
-        self$stop_service()
+      if (!.self$.request_queue$has_more()) {
+        .self$.request_waiting <- FALSE
+        .self$stop_service()
         return(invisible())
       }
       
-      queue_entry <- private$request_queue$pop()
+      queue_entry <- .self$.request_queue$pop()
       request_data <- queue_entry$data
       callback <- queue_entry$callback
       
-      request_id <- private$callback_array$append(callback)
+      request_id <- .self$.callback_array$append(callback)
       request <- list(type = "request",
                       requestId = request_id,
                       data = request_data)
       request <- json_writer(request)
       
-      if (private$verbose) cat("SEND: ", request, "\n")
+      if (.self$.verbose) cat("SEND: ", request, "\n")
       
       # TODO: check websocket connection here
-      private$websocket$send(request)
-      private$request_waiting <- TRUE
-      self$service()
+      .self$.websocket$send(request)
+      .self$.request_waiting <- TRUE
+      .self$service()
     },
-    handle_request = function(msg) {
+    .handle_request = function(msg) {
       request_id <- msg$requestId
       msg_data <- msg$data
       action <- msg_data$action
@@ -103,59 +114,59 @@ EpivizServer <- R6Class("EpivizServer",
                     success = FALSE,
                     data = NULL)      
       
-      if (self$has_action(action)) {
+      if (.self$has_action(action)) {
         tryCatch({
-          callback <- private$action_handlers[[action]]
+          callback <- .self$.action_handlers[[action]]
           response$data <- callback(msg_data)
           response$success <- TRUE
         })
       }
       
       response <- json_writer(response)
-      if (private$verbose) {
+      if (.self$.verbose) {
         cat("SEND: ", response, "\n")
       }
       
       # TODO: check websocket is not null here
-      private$websocket$send(response)
+      .self$.websocket$send(response)
     },
-    handle_response = function(msg) {
+    .handle_response = function(msg) {
       if (!isTRUE(msg$success)) {
         stop("request to JS app was unsuccessful")
       }
       
-      callback <- private$callback_array$get(msg$requestId)
+      callback <- .self$.callback_array$get(msg$requestId)
       if (!is.null(callback)) {
         callback(msg$data)
       }
-      private$pop_request()
+      .self$.pop_request()
     },
-    message_handler = function(binary, msg) {
+    .message_handler = function(binary, msg) {
       if (binary) {
         msg <- rawToChar(msg)
       }
       
-      if (private$verbose) {
+      if (.self$.verbose) {
         cat("RCVD: ", msg, "\n")
       }
       msg <- json_parser(msg)
       switch(msg$type,
-             request = private$handle_request(msg),
-             response = private$handle_response(msg))
+             request = .self$.handle_request(msg),
+             response = .self$.handle_response(msg))
     },
-    create_app = function() {
+    .create_app = function() {
       wsHandler <- function(ws) {
-        if (private$verbose) cat("WS opened\n")
-        private$websocket <- ws
-        private$websocket_closed <- FALSE
+        if (.self$.verbose) cat("WS opened\n")
+        .self$.websocket <- ws
+        .self$.websocket_closed <- FALSE
         
-        private$websocket$onMessage(private$message_handler)
-        private$websocket$onClose(function() {
-          if (private$verbose) cat("WS closed\n")
-          private$websocket_closed <- TRUE
+        .self$.websocket$onMessage(.self$.message_handler)
+        .self$.websocket$onClose(function() {
+          if (.self$.verbose) cat("WS closed\n")
+          .self$.websocket_closed <- TRUE
           invisible()
         })
-        #self$pop_request()
+        .self$.pop_request()
         invisible()
       }
     
@@ -165,89 +176,94 @@ EpivizServer <- R6Class("EpivizServer",
       handlerMgr$addHandler(httpHandler, 'static')
       handlerMgr$addWSHandler(wsHandler, 'ws')
       handlerMgr$createHttpuvApp()
-    }
-  ),
-  public = list(
-    initialize = function(
-        port=7312L, 
-        try_ports=FALSE, 
-        daemonized=NULL, 
-        verbose=FALSE) {
-      private$port <- port
-      private$try_ports <- try_ports
-      private$daemonized <-  .epivizrCanDaemonize() && isTRUE(daemonized)
-      private$start_server_fn <- if (private$daemonized) httpuv::startDaemonizedServer else httpuv::startServer
-      private$stop_server_fn <- if (private$daemonized) httpuv::stopDaemonizedServer else httpuv::stopServer
-      private$verbose <- verbose
-      
-      private$request_queue <- Queue$new()
-      private$request_waiting <- FALSE
-      
-      private$action_handlers <- vector("list")
-      
-      private$callback_array <- IndexedArray$new()
-      
-      reg.finalizer(self,
-                    function(e) {
-                      e$stop_server()
-                    }, onexit=TRUE)
     },
-    show=function() {
-      cat(sprintf("<EpivizServer> port: %d, %s", private$port, ifelse(self$is_socket_connected(),"connected","not connected")),"\n")
+    show = function() {
+      "Print server information to stdout"
+      cat(sprintf("<EpivizServer> port: %d, %s", 
+                  .self$.port, 
+                  ifelse(.self$is_socket_connected(),"connected","not connected")),"\n")
       invisible()
     },
-    is_closed = function() { is.null(private$server) },
-    is_daemonized = function() { isTRUE(private$daemonized) },
-    is_socket_connected = function() { !is.null(private$websocket) && !private$websocket_closed},
-    has_request_waiting = function() { private$request_waiting },
+    is_closed = function() {
+      "Check if server is closed, <logical>"
+      is.null(.self$.server) 
+    },
+    is_daemonized = function() {
+      "Check if server is running in background, <logical>"
+      isTRUE(.self$.daemonized) 
+    },
+    is_socket_connected = function() { 
+      "Check if there is an open websocket connection to JS app, <logical>"
+      !is.null(.self$.websocket) && !.self$.websocket_closed
+    },
+    has_request_waiting = function() { 
+      "Check if there is a sent request waiting for a response from JS app, <logical>"
+      .self$.request_waiting 
+    },
     stop_server = function() { 
-      private$interrupted <- TRUE
-      if (private$websocket_closed) {
-        private$websocket <- NULL
+      "Stop the underlying httpuv server"
+      .self$.interrupted <- TRUE
+      if (.self$.websocket_closed) {
+        .self$.websocket <- NULL
       }
       
-      if (!self$is_closed()) {
-        private$stop_server_fn(private$server)
+      if (!.self$is_closed()) {
+        .self$.stop_server_fn(.self$.server)
       }
-      private$server <- NULL
-      private$interrupted <- FALSE
+      .self$.server <- NULL
+      .self$.interrupted <- FALSE
       invisible()
     },
     start_server = function() {
-      app <- private$create_app()
+      "Start the underlying httpuv server, daemonized if applicable"
+      app <- .self$.create_app()
       
       tryCatch({
-        private$server <- private$start_server_fn("0.0.0.0", private$port, app)
+        .self$.server <- .self$.start_server_fn("0.0.0.0", .self$.port, app)
       }, error = function(e) {
-        if (!private$try_ports)
-          stop(sprintf("Error starting epivizServer, likely because port %d is in use.\nTry a different port number or setting try_ports=TRUE (see ?startEpiviz).", private$port))
-        private$try_more_ports(app)
+        if (!.self$.try_ports)
+          stop(sprintf("Error starting epivizServer, likely because port %d is in use.\nTry a different port number or setting try_ports=TRUE (see ?startEpiviz).", .self$.port))
+        .self$.try_more_ports(app)
       })
       invisible()
     },
     register_action = function(action, callback) {
+      "Register a callback<function> to evaluate when epiviz JS sends a request for given action<character>. (See Details)"
       if (!is.character(action)) {
-        stop("action must be a character string")
+        stop("action must be a string")
       }
-      if (!is.null(private$action_handlers[[action]])) {
+      if (!is.null(.self$.action_handlers[[action]])) {
         stop(sprintf("action %s is already registered", action))
       }
-      private$action_handlers[[action]] <- callback
+      .self$.action_handlers[[action]] <- callback
       invisible()
     },
-    has_action = function(action) { !is.null(private$action_handlers[[action]]) },
+    unregister_action = function(action) {
+      "Unregister a callback function for given action<character> (if registered). (See Details)"
+      if (!is.null(.self$.action_handlers[[action]])) {
+        .self$.action_handlers[[action]] <- NULL
+      }
+      invisible()
+    },
+    has_action = function(action) { 
+      "Check if a callback is registered for given action<character>, <logical>. (See Details)"
+      !is.null(.self$.action_handlers[[action]]) 
+    },
     send_request = function(request_data, callback) {
-      private$request_queue$push(list(data=request_data, callback=callback))
-      if (!private$request_waiting)
-        private$pop_request()
+      "Send request to epiviz JS app with given request_data<list>, 
+       and evaluate callback<function> when response arrives. (See Details)"
+      .self$.request_queue$push(list(data=request_data, callback=callback))
+      if (!.self$.request_waiting)
+        .self$.pop_request()
       invisible()
     },
     service=function(nonInteractive=FALSE) {
-      if (self$is_closed()) {
+      "Listen to requests from server. Only has effect when non-daemonized"
+      if (.self$is_closed()) {
         stop("Can't listen, socket is closed")
       }
 
-      if (self$is_daemonized())
+      if (.self$is_daemonized())
         return(invisible(TRUE))
 
       if (nonInteractive) {
@@ -256,21 +272,23 @@ EpivizServer <- R6Class("EpivizServer",
         return(invisible(TRUE))
       }
 
-      private$interrupted <- FALSE
-      while(!private$interrupted) {
+      .self$.interrupted <- FALSE
+      while(!.self$.interrupted) {
         httpuv::service()
         Sys.sleep(0.001)
       }
       invisible()
     },
     stop_service=function() {
-      private$interrupted <- TRUE
+      "Stop listenning to requests from server. Only has effect when non-daemonized}"
+      .self$.interrupted <- TRUE
       invisible()
     },
     run_server=function(...) {
-      self$start_server(...)
-      on.exit(self$stop_server())
-      self$service()
+      "Run server in blocking mode"
+      .self$start_server(...)
+      on.exit(.self$stop_server())
+      .self$service()
     }
   )
 )
