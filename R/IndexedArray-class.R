@@ -2,36 +2,40 @@
 #' Class providing an indexed array (hashtable)
 #' 
 #' @docType class
-#' @importFrom R6 R6Class
-IndexedArray <- R6Class("IndexedArray",
-                        private = list(
-                          nextId = 1L,
-                          items = vector("list")
+IndexedArray <- setRefClass("IndexedArray",
+                        fields = list(
+                          .nextId = "integer",
+                          .items = "list"
                         ),
-                        public = list(
+                        methods = list(
                           initialize = function() {
-                            reg.finalizer(self,
-                                          function(e) {
-                                            e$empty()                 
-                                          }, onexit = TRUE)
+                            .self$.nextId <- 1L
+                            .self$.items <- vector("list")
                           },
-                          length = function() { base::length(private$items) },
+                          finalize = function() { .self$empty() },
+                          length = function() { 
+                            "Return number of items on array <int>"
+                            base::length(.self$.items) 
+                          },
                           append = function(item) {
-                            id <- private$nextId
-                            private$nextId <- private$nextId + 1L
-                            private$items[[as.character(id)]] <- item
+                            "Append item to tail of array, returns id of item <int>"
+                            id <- .self$.nextId
+                            .self$.nextId <- .self$.nextId + 1L
+                            .self$.items[[as.character(id)]] <- item
                             id
                           },
                           get = function(id) {
-                            if (is.null(private$items[[as.character(id)]]))
+                            "Get item with given id<int>, returns <ANY>, returns NULL if no item with given id"
+                            if (is.null(.self$.items[[as.character(id)]]))
                               return(NULL)
-                            out <- private$items[[as.character(id)]]
-                            private$items[[as.character(id)]] <- NULL
+                            out <- .self$.items[[as.character(id)]]
+                            .self$.items[[as.character(id)]] <- NULL
                             out
                           },
                           empty = function() {
-                            private$items <- vector("list")
-                            private$nextId <- 1L
+                            "Remove all items from array"
+                            .self$.items <- vector("list")
+                            .self$.nextId <- 1L
                             invisible()
                           }
                         )
