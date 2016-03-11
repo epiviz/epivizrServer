@@ -1,7 +1,6 @@
 #' Class providing WebSocket connection server
 #' 
 #' @docType class
-#' @export
 #' @return RC object with methods for communication with epiviz JS app
 #' 
 #' @details
