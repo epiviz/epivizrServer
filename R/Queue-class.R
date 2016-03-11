@@ -1,34 +1,39 @@
 #' Class providing a queue data structure
 #' 
 #' @docType class
-#' @importFrom R6 R6Class
-Queue <- R6Class("Queue",
-                 private = list(
-                   items = vector("list")
-                 ),
-                 public = list(
+Queue <- setRefClass("Queue",
+                 fields = list(.items = "list"),
+                 methods = list(
                   initialize = function() {
-                    reg.finalizer(self,
-                      function(e) {
-                        e$empty()
-                      }, onexit=TRUE)
+                    .self$.items <- vector("list")
                   },
-                  length = function() { base::length(private$items) },
-                  has_more = function() { self$length() > 0 },       
+                  finalize = function() { .self$empty() },
+                  length = function() { 
+                    "Return the number of items in queue <int>"
+                    base::length(.self$.items) 
+                  },
+                  has_more = function() { 
+                    "Return TRUE if there are more items in queue <logical>"
+                    .self$length() > 0 
+                  },       
                   push = function(item) {
-                    n <- self$length()
-                    private$items[[n+1]] <- item
+                    "Push <item> onto queue"
+                    n <- .self$length()
+                    .self$.items[[n+1]] <- item
                     invisible()
                   },
                   pop = function() {
-                    if (!self$has_more()) return(NULL)
+                    "Pop next item from queue (returns NULL if queue is empty)"
+                    if (!.self$has_more()) return(NULL)
                     
-                    out <- private$items[[1]]
-                    private$items[[1]] <- NULL
+                    out <- .self$.items[[1]]
+                    .self$.items[[1]] <- NULL
                     out
                   },
                   empty = function() {
-                    private$items <- vector("list")
+                    "Remove all items from queue"
+                    .self$.items <- vector("list")
+                    invisible()
                   }
                  )
 )
