@@ -42,8 +42,7 @@ response message.
 
 \item{\code{run_server(...)}}{Run server in blocking mode}
 
-\item{\code{send_request(request_data, callback)}}{Send request to epiviz JS app with given request_data<list>, 
-and evaluate callback<function> when response arrives. (See Details)}
+\item{\code{send_request(request_data, callback)}}{Send request to epiviz JS app with given request_data<list>, and evaluate callback<function> when response arrives. (See Details)}
 
 \item{\code{service(nonInteractive = FALSE)}}{Listen to requests from server. Only has effect when non-daemonized}
 
@@ -51,7 +50,7 @@ and evaluate callback<function> when response arrives. (See Details)}
 
 \item{\code{stop_server()}}{Stop the underlying httpuv server}
 
-\item{\code{stop_service()}}{Stop listenning to requests from server. Only has effect when non-daemonized}}
+\item{\code{stop_service()}}{Stop listenning to requests from server. Only has effect when non-daemonized.}
 
 \item{\code{unregister_action(action)}}{Unregister a callback function for given action<character> (if registered). (See Details)}
 }}

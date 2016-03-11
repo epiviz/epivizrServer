@@ -6,7 +6,9 @@
 #' @param try_ports Try various ports until an open port is found <logical>
 #' @param daemonized Run in background using httpuv's daemonized libuv server <logical>
 #' @param verbose Print verbose output <logical>
-#' @return an 'EpivizServer' object
+#' @return an \code{\link{EpivizServer}} object
+#' 
+#' @seealso \code{\link{EpivizServer}} for the class of objects returned
 createServer <- function(port=7123L,
                          try_ports=FALSE,
                          daemonized=NULL,

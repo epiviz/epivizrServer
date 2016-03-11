@@ -249,8 +249,7 @@ EpivizServer <- setRefClass("EpivizServer",
       !is.null(.self$.action_handlers[[action]]) 
     },
     send_request = function(request_data, callback) {
-      "Send request to epiviz JS app with given request_data<list>, 
-       and evaluate callback<function> when response arrives. (See Details)"
+      "Send request to epiviz JS app with given request_data<list>, and evaluate callback<function> when response arrives. (See Details)"
       .self$.request_queue$push(list(data=request_data, callback=callback))
       if (!.self$.request_waiting)
         .self$.pop_request()
@@ -279,7 +278,7 @@ EpivizServer <- setRefClass("EpivizServer",
       invisible()
     },
     stop_service=function() {
-      "Stop listenning to requests from server. Only has effect when non-daemonized}"
+      "Stop listenning to requests from server. Only has effect when non-daemonized."
       .self$.interrupted <- TRUE
       invisible()
     },

@@ -17,9 +17,12 @@ createServer(port = 7123L, try_ports = FALSE, daemonized = NULL,
 \item{verbose}{Print verbose output <logical>}
 }
 \value{
-an 'EpivizServer' object
+an \code{\link{EpivizServer}} object
 }
 \description{
 Create a new EpivizServer object
+}
+\seealso{
+\code{\link{EpivizServer}} for the class of objects returned
 }
 
