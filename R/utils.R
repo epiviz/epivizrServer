@@ -12,5 +12,8 @@
 # }
 
 json_parser <- rjson::fromJSON
+
+#' JSON writer used by this package
+#' @export
 json_writer <- rjson::toJSON
 
