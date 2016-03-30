@@ -46,7 +46,7 @@ response message.
 
 \item{\code{service(nonInteractive = FALSE)}}{Listen to requests from server. Only has effect when non-daemonized}
 
-\item{\code{start_server()}}{Start the underlying httpuv server, daemonized if applicable}
+\item{\code{start_server(static_site_path = NULL)}}{Start the underlying httpuv server, daemonized if applicable}
 
 \item{\code{stop_server()}}{Stop the underlying httpuv server}
 

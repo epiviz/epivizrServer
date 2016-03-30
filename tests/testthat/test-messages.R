@@ -52,7 +52,7 @@ test_that("socket connection works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path="test_page.html")
+  server$start_server(static_site_path=".")
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
@@ -81,7 +81,7 @@ test_that("handle request works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path="test_page.html")
+  server$start_server(static_site_path=".")
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
@@ -132,7 +132,7 @@ test_that("send request works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path="test_page.html")
+  server$start_server(static_site_path=".")
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
