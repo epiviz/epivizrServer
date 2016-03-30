@@ -153,7 +153,7 @@ EpivizServer <- setRefClass("EpivizServer",
              request = .self$.handle_request(msg),
              response = .self$.handle_response(msg))
     },
-    .create_app = function() {
+    .create_app = function(static_site_path=NULL) {
       wsHandler <- function(ws) {
         if (.self$.verbose) cat("WS opened\n")
         .self$.websocket <- ws
@@ -169,7 +169,11 @@ EpivizServer <- setRefClass("EpivizServer",
         invisible()
       }
     
-      httpHandler <- .dummyTestPage
+      if (is.null(static_site_path) || !file.exists(static_site_path)) {
+        httpHandler <- .dummyTestPage
+      } else {
+        httpHandler <- staticHandler(static_site_path)
+      }
     
       handlerMgr <- HandlerManager$new()
       handlerMgr$addHandler(httpHandler, 'static')
@@ -213,9 +217,9 @@ EpivizServer <- setRefClass("EpivizServer",
       .self$.interrupted <- FALSE
       invisible()
     },
-    start_server = function() {
+    start_server = function(static_site_path=NULL) {
       "Start the underlying httpuv server, daemonized if applicable"
-      app <- .self$.create_app()
+      app <- .self$.create_app(static_site_path)
       
       tryCatch({
         .self$.server <- .self$.start_server_fn("0.0.0.0", .self$.port, app)
