@@ -118,6 +118,12 @@ EpivizServer <- setRefClass("EpivizServer",
           callback <- .self$.action_handlers[[action]]
           response$data <- callback(msg_data)
           response$success <- TRUE
+        }, error = function(e) {
+          if (.self$.verbose) {
+            cat("action handler returned error:\n")
+            cat(e$message, "\n")
+            cat("sending unsuccessfull response\n")
+          }
         })
       }
       
