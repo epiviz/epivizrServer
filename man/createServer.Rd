@@ -4,11 +4,13 @@
 \alias{createServer}
 \title{Create a new EpivizServer object}
 \usage{
-createServer(port = 7123L, try_ports = FALSE, daemonized = NULL,
-  verbose = FALSE)
+createServer(port = 7123L, static_site_path = "", try_ports = FALSE,
+  daemonized = NULL, verbose = FALSE)
 }
 \arguments{
 \item{port}{Port to which server will listen to <int>}
+
+\item{static_site_path}{Path to serve static html files <char>}
 
 \item{try_ports}{Try various ports until an open port is found <logical>}
 

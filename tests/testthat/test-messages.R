@@ -1,40 +1,5 @@
 context("messages")
 
-.canPhantomTest <- function() {
-  if(Sys.which("phantomjs") == "") { return(FALSE) }
-  if(!getOption("epivizrCanDaemonize")) { return(FALSE) }
-  TRUE
-}
-
-remDr <- NULL
-pJS <- NULL
-
-.startRemoteDriver <- function() {
-  if(!require(RSelenium)) {
-    stop("can't run this test here")
-  }
-  
-  if(!.canPhantomTest()) {
-    stop("can't do headless testing here")
-  }
-  
-  pJS <<- phantom()
-  Sys.sleep(2)
-  
-  remDr <<- remoteDriver(browserName = 'phantomjs')
-  res <- remDr$open()
-  invisible()
-}
-
-.navigateRemoteDriver <- function(url) {
-  parallel::mcparallel(remDr$navigate(url), detached=TRUE)
-  Sys.sleep(2)
-}
-
-.stopPhantomJS <- function() {
-  pJS$stop()
-}
-
 test_that("socket connection works", {
   skip_on_cran()
   skip_on_os("windows")
@@ -44,7 +9,10 @@ test_that("socket connection works", {
     skip("This test can't be run in this environment")
   }
   
-  server <- EpivizServer$new(port=7123L, daemonized=TRUE, verbose=TRUE)
+  server <- createServer(port = 7123L, 
+                         static_site_path = ".",
+                         daemonized = TRUE, 
+                         verbose = TRUE)
   if (!server$is_daemonized()) {
     skip("This test only works for daemonized servers")
   }
@@ -52,7 +20,7 @@ test_that("socket connection works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path=".")
+  server$start_server()
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
@@ -73,7 +41,10 @@ test_that("handle request works", {
     skip("This test can't be run in this environment")
   }
   
-  server <- EpivizServer$new(port=7123L, daemonized=TRUE, verbose=TRUE)
+  server <- createServer(port = 7123L, 
+                         static_site_path = ".",
+                         daemonized = TRUE, 
+                         verbose = TRUE)
   if (!server$is_daemonized()) {
     skip("This test only works for daemonized servers")
   }
@@ -81,7 +52,7 @@ test_that("handle request works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path=".")
+  server$start_server()
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
@@ -124,7 +95,10 @@ test_that("send request works", {
     skip("This test can't be run in this environment")
   }
   
-  server <- EpivizServer$new(port=7123L, daemonized=TRUE, verbose=TRUE)
+  server <- createServer(port = 7123L, 
+                         static_site_path = ".",
+                         daemonized=TRUE, 
+                         verbose=TRUE)
   if (!server$is_daemonized()) {
     skip("This test only works for daemonized servers")
   }
@@ -132,7 +106,7 @@ test_that("send request works", {
   .startRemoteDriver()
   on.exit({cat("stopping remDr\n"); .stopPhantomJS()})
   
-  server$start_server(static_site_path=".")
+  server$start_server()
   on.exit({cat("stopping server\n"); server$stop_server()}, add=TRUE)
   
   .navigateRemoteDriver("http://127.0.0.1:7123")
@@ -140,13 +114,13 @@ test_that("send request works", {
   
   lastMessage <- ""
   server$register_action("update", function(msg_data) {
-    lastMessage <<- msg_data$message
+    lastMessage <- msg_data$message
     list(message="This is the response from R")
   })
 
   expect_false(server$is_closed())
 
-  lastMessage <<- ""
+  lastMessage <- ""
   request_text_from_R <- "This is a message from R"
   server$send_request(list(message=request_text_from_R), 
                       function(response_data) {

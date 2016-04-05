@@ -12,7 +12,7 @@ RC object with methods for communication with epiviz JS app
 Class providing WebSocket connection server
 }
 \details{
-The most important aspect of the API of this server are methods \code{register_action(action, callback)} and \code{send_request}. These are
+The most important aspect of the API of this server are methods \code{register_action} and \code{send_request}. These are
 used to interact with the epiviz JS app through the provided websocket connection. \code{register_action(action, callback)} registers
 a callback function to be executed upon request from the epiviz JS app. When the server receives a JSON message through the websocket, it
 checks for an \code{action} field in the received request message, and then evaluates the expression \code{callback(message_data)} where \code{message_data}
@@ -46,7 +46,7 @@ response message.
 
 \item{\code{service(nonInteractive = FALSE)}}{Listen to requests from server. Only has effect when non-daemonized}
 
-\item{\code{start_server(static_site_path = NULL)}}{Start the underlying httpuv server, daemonized if applicable}
+\item{\code{start_server()}}{Start the underlying httpuv server, daemonized if applicable}
 
 \item{\code{stop_server()}}{Stop the underlying httpuv server}
 

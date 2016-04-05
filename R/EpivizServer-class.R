@@ -4,7 +4,7 @@
 #' @return RC object with methods for communication with epiviz JS app
 #' 
 #' @details
-#' The most important aspect of the API of this server are methods \code{register_action(action, callback)} and \code{send_request}. These are
+#' The most important aspect of the API of this server are methods \code{register_action} and \code{send_request}. These are
 #' used to interact with the epiviz JS app through the provided websocket connection. \code{register_action(action, callback)} registers
 #' a callback function to be executed upon request from the epiviz JS app. When the server receives a JSON message through the websocket, it
 #' checks for an \code{action} field in the received request message, and then evaluates the expression \code{callback(message_data)} where \code{message_data}
@@ -32,16 +32,19 @@ EpivizServer <- setRefClass("EpivizServer",
     .callback_array = "IndexedArray", 
     .daemonized = "logical", 
     .start_server_fn = "function", 
-    .stop_server_fn = "function" 
+    .stop_server_fn = "function",
+    .static_site_path = "character"
   ),
   methods = list(
     initialize = function(
       port=7312L, 
+      static_site_path="",
       try_ports=FALSE, 
       daemonized=NULL, 
       verbose=FALSE) 
     {
       .self$.port <- port
+      .self$.static_site_path <- static_site_path
       .self$.try_ports <- try_ports
       .self$.daemonized <-  .epivizrCanDaemonize() && isTRUE(daemonized)
       .self$.start_server_fn <- if (.self$.daemonized) httpuv::startDaemonizedServer else httpuv::startServer
@@ -98,7 +101,6 @@ EpivizServer <- setRefClass("EpivizServer",
       
       if (.self$.verbose) cat("SEND: ", request, "\n")
       
-      # TODO: check websocket connection here
       .self$.websocket$send(request)
       .self$.request_waiting <- TRUE
       .self$service()
@@ -159,7 +161,7 @@ EpivizServer <- setRefClass("EpivizServer",
              request = .self$.handle_request(msg),
              response = .self$.handle_response(msg))
     },
-    .create_app = function(static_site_path=NULL) {
+    .create_app = function() {
       wsHandler <- function(ws) {
         if (.self$.verbose) cat("WS opened\n")
         .self$.websocket <- ws
@@ -175,10 +177,12 @@ EpivizServer <- setRefClass("EpivizServer",
         invisible()
       }
     
-      if (is.null(static_site_path) || !file.exists(static_site_path)) {
+      if (length(.self$.static_site_path) != 1 ||
+          nchar(.self$.static_site_path) == 0 || 
+          !file.exists(.self$.static_site_path)) {
         httpHandler <- .dummyTestPage
       } else {
-        httpHandler <- staticHandler(static_site_path)
+        httpHandler <- staticHandler(.self$.static_site_path)
       }
     
       handlerMgr <- HandlerManager$new()
@@ -223,9 +227,9 @@ EpivizServer <- setRefClass("EpivizServer",
       .self$.interrupted <- FALSE
       invisible()
     },
-    start_server = function(static_site_path=NULL) {
+    start_server = function() {
       "Start the underlying httpuv server, daemonized if applicable"
-      app <- .self$.create_app(static_site_path)
+      app <- .self$.create_app()
       
       tryCatch({
         .self$.server <- .self$.start_server_fn("0.0.0.0", .self$.port, app)
