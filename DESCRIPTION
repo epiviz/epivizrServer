@@ -6,6 +6,8 @@ Authors@R: person("Hector", "Corrada Bravo", email = "hcorrada@gmail.com", role 
 URL: https://epiviz.github.io
 BugReports: https://github.com/epiviz/epivizrServer
 Description: This package provides objects to manage WebSocket connections to epiviz apps. Other epivizr package use this infrastructure.
+BiocViews: Infrastructure, Visualization
+VignetteBuilder: knitr
 Depends:
     R (>= 3.2.3),
     methods
@@ -15,7 +17,9 @@ Imports:
     rjson,
     mime (>= 0.2)
 Suggests:
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
 License: MIT + file LICENSE
 LazyData: true
 Collate:
