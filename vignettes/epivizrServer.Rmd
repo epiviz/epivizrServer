@@ -20,8 +20,8 @@ It is based on the [httpuv](http://www.github.com/rstudio/httpuv) package, which
 
 ### Usage 
 
-```{r, eval=FALSE}
-library(EpivizrServer)
+```{r}
+library(epivizrServer)
 
 # create the server (but it's not started yet)
 # it can serve static html files as well
@@ -43,7 +43,7 @@ server$send_request(list(x=2,y=5), function(response_data) {
 })
 
 # in Windows platform this is required to listen and respond to requests
-server$service()
+#server$service()
 
 # when done, stop the server
 server$stop_server()

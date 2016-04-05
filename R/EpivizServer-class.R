@@ -17,6 +17,19 @@
 #' the expression \code{callback(response_data)} is evaluated where \code{response_data} is obtained from the \code{data} field in the received
 #' response message.
 #'
+#' @examples
+#' server <- createServer()
+#' server$register_action("getData", function(request_data) {
+#'   list(x=1,y=3)
+#' })
+#' 
+#' server$start_server()
+#'
+#' server$send_request(list(x=2,y=5), function(response_data) {
+#'   cat(response_data$x)
+#' })
+#'
+#' server$stop_server()
 EpivizServer <- setRefClass("EpivizServer",
   fields = list(
     .port = "integer", 

@@ -24,6 +24,11 @@ an \code{\link{EpivizServer}} object
 \description{
 Create a new EpivizServer object
 }
+\examples{
+server <- createServer(port=7123,
+                       verbose=TRUE
+                       )
+}
 \seealso{
 \code{\link{EpivizServer}} for the class of objects returned
 }

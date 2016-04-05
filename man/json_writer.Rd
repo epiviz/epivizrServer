@@ -11,8 +11,14 @@ json_writer(x, method = "C")
 
 \item{method}{method used to write json}
 }
+\value{
+a string with JSON encoding of object
+}
 \description{
 Currently this just renames \code{\link{toJSON}} in the \code{rjson} package.
+}
+\examples{
+json_writer(1:10)
 }
 \seealso{
 \code{\link{toJSON}}

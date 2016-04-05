@@ -54,4 +54,18 @@ response message.
 
 \item{\code{unregister_action(action)}}{Unregister a callback function for given action<character> (if registered). (See Details)}
 }}
+\examples{
+server <- createServer()
+server$register_action("getData", function(request_data) {
+  list(x=1,y=3)
+})
+
+server$start_server()
+
+server$send_request(list(x=2,y=5), function(response_data) {
+  cat(response_data$x)
+})
+
+server$stop_server()
+}
 

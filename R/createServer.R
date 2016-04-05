@@ -10,6 +10,10 @@
 #' @return an \code{\link{EpivizServer}} object
 #' 
 #' @seealso \code{\link{EpivizServer}} for the class of objects returned
+#' @examples
+#' server <- createServer(port=7123,
+#'                        verbose=TRUE
+#'                        )
 createServer <- function(port=7123L,
                          static_site_path="",
                          try_ports=FALSE,
