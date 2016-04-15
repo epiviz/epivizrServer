@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>EpivizServer Test Page</title>
+
+<style type="text/css">
+  body { font-family: Helvetica; }
+  pre { margin: 0 }
+</style>
+
+<script>
+  
+  var ws = new WebSocket("ws://" + window.location.host);
+  ws.onmessage = function(msg) {
+    var message = JSON.parse(msg.data);
+    console.dir(message);
+    var type = message.type;
+    if (type == "response") {
+      var success = message.success;
+      if (success) {
+        msgDiv = document.createElement("pre");
+        msgDiv.innerHTML = message.data.message
+          .replace(/&/g, "&amp;")
+          .replace(/\\</g, "&lt;");
+        document
+          .getElementById("response_output")
+          .appendChild(msgDiv);
+      }
+      else { console.log("response returned with success=false");}
+    } else if (type == "request") {
+      var requestId = message.requestId;
+      msgDiv = document.createElement("pre");
+      msgDiv.innerHTML = message.data.message
+        .replace(/&/g, "&amp;")
+        .replace(/\\</g, "&lt;");
+      document
+        .getElementById("request_output")
+        .appendChild(msgDiv);
+      response = {
+        type: "response", 
+        requestId: requestId, 
+        success: true, 
+        data: {message: "this is the response from JS"}
+      };
+      ws.send(JSON.stringify(response));
+    }
+  }
+  function sendInput() {
+    var input = document.getElementById('input');
+    ws.send(JSON.stringify({
+      type: 'request', 
+      requestId: 0, 
+      data: {
+        action: 'update', 
+        message: input.value
+      }
+    }));
+    input.value = '';
+  }
+</script>
+</head>
+
+<body>
+  <h3>Send Message</h3>
+  <form action="" onsubmit="sendInput(); return false">
+    <input type="text" id="input"/>
+  </form>
+  <h3>Responses</h3>
+  <div id="response_output"></div>
+  <h3>Requests</h3>
+  <div id="request_output"></div>
+</body>
+</html>
+
