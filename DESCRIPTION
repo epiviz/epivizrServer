@@ -1,0 +1,25 @@
+Package: epivizrServer
+Type: Package
+Title: WebSocket server infrastructure for epivizr apps and packages
+Version: 0.99.0
+Authors@R: person("Hector", "Corrada Bravo", email =
+        "hcorrada@gmail.com", role = c("aut", "cre"))
+URL: https://epiviz.github.io
+BugReports: https://github.com/epiviz/epivizrServer
+Description: This package provides objects to manage WebSocket
+        connections to epiviz apps. Other epivizr package use this
+        infrastructure.
+biocViews: Infrastructure, Visualization
+VignetteBuilder: knitr
+Depends: R (>= 3.2.3), methods
+Imports: httpuv (>= 1.3.0), R6 (>= 2.0.0), rjson, mime (>= 0.2)
+Suggests: testthat, knitr, rmarkdown
+License: MIT + file LICENSE
+LazyData: true
+Collate: 'IndexedArray-class.R' 'Queue-class.R' 'utils.R' 'zzz.R'
+        'middleware-plus-supporting.R' 'dummyTestPage.R'
+        'EpivizServer-class.R' 'createServer.R'
+RoxygenNote: 5.0.1
+NeedsCompilation: no
+Author: Hector Corrada Bravo [aut, cre]
+Maintainer: Hector Corrada Bravo <hcorrada@gmail.com>
