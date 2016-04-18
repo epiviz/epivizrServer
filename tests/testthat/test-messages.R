@@ -128,7 +128,9 @@ test_that("send request works", {
                         print(response_data)
                         lastMessage <<- response_data$message
                       })
-  Sys.sleep(2)
+  
+  server$wait_to_clear_requests()
+  Sys.sleep(1)
   outputEl <- remDr$findElement(using="id", "request_output")
   requestEl <- outputEl$findChildElement(using="css", "pre")
   request_text_in_JS <- requestEl$getElementText()[[1]]

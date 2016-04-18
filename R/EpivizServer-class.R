@@ -43,7 +43,8 @@ EpivizServer <- setRefClass("EpivizServer",
     .request_waiting = "logical", 
     .action_handlers = "list", 
     .callback_array = "IndexedArray", 
-    .daemonized = "logical", 
+    .daemonized = "logical",
+    .non_interactive = "logical",
     .start_server_fn = "function", 
     .stop_server_fn = "function",
     .static_site_path = "character"
@@ -54,15 +55,21 @@ EpivizServer <- setRefClass("EpivizServer",
       static_site_path="",
       try_ports=FALSE, 
       daemonized=NULL, 
-      verbose=FALSE) 
+      verbose=FALSE,
+      non_interactive=FALSE) 
     {
       .self$.port <- port
       .self$.static_site_path <- static_site_path
       .self$.try_ports <- try_ports
+      if (is.null(daemonized)) {
+        .self$.daemonized <- .epivizrCanDaemonize()
+      } else {
       .self$.daemonized <-  .epivizrCanDaemonize() && isTRUE(daemonized)
+      }
       .self$.start_server_fn <- if (.self$.daemonized) httpuv::startDaemonizedServer else httpuv::startServer
       .self$.stop_server_fn <- if (.self$.daemonized) httpuv::stopDaemonizedServer else httpuv::stopServer
       .self$.verbose <- verbose
+      .self$.non_interactive <- non_interactive
 
       .self$.websocket <- NULL
       .self$.websocket_closed <- TRUE
@@ -125,14 +132,13 @@ EpivizServer <- setRefClass("EpivizServer",
 
       response <- list(type = "response",
                     requestId = request_id,
-                    success = FALSE,
-                    data = NULL)      
+                    data = list(success=FALSE))      
       
       if (.self$has_action(action)) {
         tryCatch({
           callback <- .self$.action_handlers[[action]]
           response$data <- callback(msg_data)
-          response$success <- TRUE
+          response$data$success <- TRUE
         }, error = function(e) {
           if (.self$.verbose) {
             cat("action handler returned error:\n")
@@ -151,8 +157,9 @@ EpivizServer <- setRefClass("EpivizServer",
       .self$.websocket$send(response)
     },
     .handle_response = function(msg) {
-      if (!isTRUE(msg$success)) {
-        stop("request to JS app was unsuccessful")
+      if (!isTRUE(msg$data$success)) {
+        cat("[epivizr] request to JS app was unsuccessful\n")
+        .self$.pop_request()
       }
       
       callback <- .self$.callback_array$get(msg$requestId)
@@ -218,6 +225,10 @@ EpivizServer <- setRefClass("EpivizServer",
       "Check if server is running in background, <logical>"
       isTRUE(.self$.daemonized) 
     },
+    is_interactive = function() {
+      "Check if server is running in interactive mode, <logical>"
+      isTRUE(!.self$.non_interactive)
+    },
     is_socket_connected = function() { 
       "Check if there is an open websocket connection to JS app, <logical>"
       !is.null(.self$.websocket) && !.self$.websocket_closed
@@ -225,6 +236,18 @@ EpivizServer <- setRefClass("EpivizServer",
     has_request_waiting = function() { 
       "Check if there is a sent request waiting for a response from JS app, <logical>"
       .self$.request_waiting 
+    },
+    wait_to_clear_requests = function(timeout=3L) {
+      "Wait for \\code{timeout} seconds to clear all pending requests."
+      ptm <- proc.time()
+      while (.self$has_request_waiting() && (proc.time() - ptm < timeout)["elapsed"]) {
+        Sys.sleep(0.001)
+        .self$service()
+      }
+      if (.self$has_request_waiting()) {
+        stop("requests not cleared")
+      }
+      invisible()
     },
     stop_server = function() { 
       "Stop the underlying httpuv server"
@@ -282,7 +305,7 @@ EpivizServer <- setRefClass("EpivizServer",
         .self$.pop_request()
       invisible()
     },
-    service=function(nonInteractive=FALSE) {
+    service=function() {
       "Listen to requests from server. Only has effect when non-daemonized"
       if (.self$is_closed()) {
         stop("Can't listen, socket is closed")
@@ -291,10 +314,10 @@ EpivizServer <- setRefClass("EpivizServer",
       if (.self$is_daemonized())
         return(invisible(TRUE))
 
-      if (nonInteractive) {
+      if (!.self$is_interactive()) {
         # run service loop once
         httpuv::service()
-        return(invisible(TRUE))
+        return(invisible())
       }
 
       .self$.interrupted <- FALSE

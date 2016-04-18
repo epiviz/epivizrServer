@@ -36,6 +36,8 @@ response message.
 
 \item{\code{is_daemonized()}}{Check if server is running in background, <logical>}
 
+\item{\code{is_interactive()}}{Check if server is running in interactive mode, <logical>}
+
 \item{\code{is_socket_connected()}}{Check if there is an open websocket connection to JS app, <logical>}
 
 \item{\code{register_action(action, callback)}}{Register a callback<function> to evaluate when epiviz JS sends a request for given action<character>. (See Details)}
@@ -44,7 +46,7 @@ response message.
 
 \item{\code{send_request(request_data, callback)}}{Send request to epiviz JS app with given request_data<list>, and evaluate callback<function> when response arrives. (See Details)}
 
-\item{\code{service(nonInteractive = FALSE)}}{Listen to requests from server. Only has effect when non-daemonized}
+\item{\code{service()}}{Listen to requests from server. Only has effect when non-daemonized}
 
 \item{\code{start_server()}}{Start the underlying httpuv server, daemonized if applicable}
 
@@ -53,6 +55,8 @@ response message.
 \item{\code{stop_service()}}{Stop listenning to requests from server. Only has effect when non-daemonized.}
 
 \item{\code{unregister_action(action)}}{Unregister a callback function for given action<character> (if registered). (See Details)}
+
+\item{\code{wait_to_clear_requests(timeout = 3L)}}{Wait for \code{timeout} seconds to clear all pending requests.}
 }}
 \examples{
 server <- createServer()
