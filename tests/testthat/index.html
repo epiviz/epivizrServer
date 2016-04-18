@@ -17,7 +17,7 @@
     console.dir(message);
     var type = message.type;
     if (type == "response") {
-      var success = message.success;
+      var success = message.data.success;
       if (success) {
         msgDiv = document.createElement("pre");
         msgDiv.innerHTML = message.data.message
@@ -40,8 +40,7 @@
       response = {
         type: "response", 
         requestId: requestId, 
-        success: true, 
-        data: {message: "this is the response from JS"}
+        data: {success: true, message: "this is the response from JS"},
       };
       ws.send(JSON.stringify(response));
     }

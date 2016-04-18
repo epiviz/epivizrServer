@@ -5,18 +5,20 @@
 \title{Create a new EpivizServer object}
 \usage{
 createServer(port = 7123L, static_site_path = "", try_ports = FALSE,
-  daemonized = NULL, verbose = FALSE)
+  daemonized = NULL, verbose = FALSE, non_interactive = FALSE)
 }
 \arguments{
-\item{port}{Port to which server will listen to <int>}
+\item{port}{(int) port to which server will listen to.}
 
-\item{static_site_path}{Path to serve static html files <char>}
+\item{static_site_path}{(character) path to serve static html files.}
 
-\item{try_ports}{Try various ports until an open port is found <logical>}
+\item{try_ports}{(logical) try various ports until an open port is found.}
 
-\item{daemonized}{Run in background using httpuv's daemonized libuv server <logical>}
+\item{daemonized}{(logical) run in background using httpuv's daemonized libuv server.}
 
-\item{verbose}{Print verbose output <logical>}
+\item{verbose}{(logical) print verbose output.}
+
+\item{non_interactive}{(logical) run in non-interactive mode. For development purposes only.}
 }
 \value{
 an \code{\link{EpivizServer}} object
