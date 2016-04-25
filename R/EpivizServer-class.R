@@ -84,7 +84,7 @@ EpivizServer <- setRefClass("EpivizServer",
       
       .self$.callback_array <- IndexedArray$new()
     },
-    finalize = function() { .self$stop_server() },
+#    finalize = function() { .self$stop_server() },
     .try_more_ports = function(app, minPort=7000L, maxPort=7999L) {
       success <- FALSE
       .self$.port <- minPort
