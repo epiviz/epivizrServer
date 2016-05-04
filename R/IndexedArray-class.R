@@ -12,7 +12,6 @@ IndexedArray <- setRefClass("IndexedArray",
                             .self$.nextId <- 1L
                             .self$.items <- vector("list")
                           },
-                          finalize = function() { .self$empty() },
                           length = function() { 
                             "Return number of items on array <int>"
                             base::length(.self$.items) 
