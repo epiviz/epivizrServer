@@ -7,7 +7,6 @@ Queue <- setRefClass("Queue",
                   initialize = function() {
                     .self$.items <- vector("list")
                   },
-                  finalize = function() { .self$empty() },
                   length = function() { 
                     "Return the number of items in queue <int>"
                     base::length(.self$.items) 
