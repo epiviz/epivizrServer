@@ -13,10 +13,10 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The `epivizrServer` packages includes methods providing WebSocket connection server and request/response message
-handling for the epiviz JS application [http://epiviz.github.io](http://epiviz.github.io). These functions have been extracted from the `epivizr` [Bioconductor package](http://bioconductor.org/packages/release/bioc/html/epivizr.html) into its own package for easier use and maintenance.
+The `r Biocpkg("epivizrServer")` package includes methods providing WebSocket connection server and request/response message
+handling for the epiviz JS application [http://epiviz.github.io](http://epiviz.github.io). These functions have been extracted from the `r Biocpkg("epivizr")` Bioconductor package into its own package for easier use and maintenance.
 
-It is based on the [httpuv](http://www.github.com/rstudio/httpuv) package, which provides an interface to the libuv networking library. 
+It is based on the `r CRANpkg("httpuv")` package, which provides an interface to the libuv networking library. 
 
 ### Usage 
 
