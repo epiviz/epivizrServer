@@ -13,7 +13,7 @@ biocViews: Infrastructure, Visualization
 VignetteBuilder: knitr
 Depends: R (>= 3.2.3), methods
 Imports: httpuv (>= 1.3.0), R6 (>= 2.0.0), rjson, mime (>= 0.2)
-Suggests: testthat, knitr, rmarkdown
+Suggests: testthat, knitr, rmarkdown, BiocStyle
 License: MIT + file LICENSE
 LazyData: true
 Collate: 'IndexedArray-class.R' 'Queue-class.R' 'utils.R' 'zzz.R'
