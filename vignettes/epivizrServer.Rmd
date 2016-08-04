@@ -2,7 +2,7 @@
 title: "`epivizrServer` Usage"
 author: "Hector Corrada Bravo"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{epivizrServer Usage}
   %\VignetteEngine{knitr::rmarkdown}
