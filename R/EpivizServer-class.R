@@ -244,6 +244,13 @@ EpivizServer <- setRefClass("EpivizServer",
         Sys.sleep(0.001)
         .self$service()
       }
+      
+      if (.self$.verbose) {
+        cat("Exiting 'wait_to_clear_requests'\n")
+        cat("request waiting: ", .self$has_request_waiting(), "\n")
+        cat("request queue:\n")
+        print(.self$.request_queue)
+      }
       if (.self$has_request_waiting()) {
         stop("requests not cleared")
       }
