@@ -319,6 +319,7 @@ EpivizServer <- setRefClass("EpivizServer",
       }
 
       if (.self$is_daemonized())
+        httpuv::service()
         return(invisible(TRUE))
 
       if (!.self$is_interactive()) {
