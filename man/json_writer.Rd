@@ -4,10 +4,12 @@
 \alias{json_writer}
 \title{JSON writer used by this package}
 \usage{
-json_writer(x, method = "C")
+json_writer(x, indent = 0, method = "C")
 }
 \arguments{
 \item{x}{object to write to json}
+
+\item{indent}{integer specifying how much indentation to use when formatting the JSON object; if 0, no pretty-formatting is used}
 
 \item{method}{method used to write json}
 }
@@ -17,10 +19,6 @@ a string with JSON encoding of object
 \description{
 Currently this just renames \code{\link{toJSON}} in the \code{rjson} package.
 }
-\examples{
-json_writer(1:10)
-}
 \seealso{
 \code{\link{toJSON}}
 }
-
