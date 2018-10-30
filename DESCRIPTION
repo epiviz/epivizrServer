@@ -1,7 +1,7 @@
 Package: epivizrServer
 Type: Package
 Title: WebSocket server infrastructure for epivizr apps and packages
-Version: 1.10.0
+Version: 1.11.0
 Authors@R: person("Hector", "Corrada Bravo", email =
         "hcorrada@gmail.com", role = c("aut", "cre"))
 URL: https://epiviz.github.io
