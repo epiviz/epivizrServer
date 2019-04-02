@@ -31,7 +31,7 @@ server$stop_server()
 
 # in interactive sessions it is good practice
 # to add a `stop_server` call to the R exit hooks
-# to relase network port used
+# to release network port used
 server$start_server()
 on.exit(server$stop_server())
 ```
