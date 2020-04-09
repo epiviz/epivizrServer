@@ -2,8 +2,8 @@
 % Please edit documentation in R/EpivizServer-class.R
 \docType{class}
 \name{EpivizServer-class}
-\alias{EpivizServer}
 \alias{EpivizServer-class}
+\alias{EpivizServer}
 \title{Class providing WebSocket connection server}
 \value{
 RC object with methods for communication with epiviz JS app
@@ -58,6 +58,7 @@ response message.
 
 \item{\code{wait_to_clear_requests(timeout = 3L)}}{Wait for \code{timeout} seconds to clear all pending requests.}
 }}
+
 \examples{
 server <- createServer()
 server$register_action("getData", function(request_data) {
@@ -72,4 +73,3 @@ server$send_request(list(x=2,y=5), function(response_data) {
 
 server$stop_server()
 }
-

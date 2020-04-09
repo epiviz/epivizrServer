@@ -2,8 +2,8 @@
 % Please edit documentation in R/Queue-class.R
 \docType{class}
 \name{Queue-class}
-\alias{Queue}
 \alias{Queue-class}
+\alias{Queue}
 \title{Class providing a queue data structure}
 \description{
 Class providing a queue data structure

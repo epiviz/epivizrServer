@@ -19,7 +19,7 @@ LazyData: true
 Collate: 'IndexedArray-class.R' 'Queue-class.R' 'utils.R' 'zzz.R'
         'middleware-plus-supporting.R' 'dummyTestPage.R'
         'EpivizServer-class.R' 'createServer.R'
-RoxygenNote: 5.0.1
+RoxygenNote: 7.1.0
 NeedsCompilation: no
 Author: Hector Corrada Bravo [aut, cre]
 Maintainer: Hector Corrada Bravo <hcorrada@gmail.com>

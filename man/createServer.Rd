@@ -4,8 +4,14 @@
 \alias{createServer}
 \title{Create a new EpivizServer object}
 \usage{
-createServer(port = 7123L, static_site_path = "", try_ports = FALSE,
-  daemonized = NULL, verbose = FALSE, non_interactive = FALSE)
+createServer(
+  port = 7123L,
+  static_site_path = "",
+  try_ports = FALSE,
+  daemonized = NULL,
+  verbose = FALSE,
+  non_interactive = FALSE
+)
 }
 \arguments{
 \item{port}{(int) port to which server will listen to.}
@@ -34,4 +40,3 @@ server <- createServer(port=7123,
 \seealso{
 \code{\link{EpivizServer}} for the class of objects returned
 }
-

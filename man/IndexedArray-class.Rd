@@ -2,8 +2,8 @@
 % Please edit documentation in R/IndexedArray-class.R
 \docType{class}
 \name{IndexedArray-class}
-\alias{IndexedArray}
 \alias{IndexedArray-class}
+\alias{IndexedArray}
 \title{Class providing an indexed array (hashtable)}
 \description{
 Class providing an indexed array (hashtable)
